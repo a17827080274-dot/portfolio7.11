@@ -9,23 +9,23 @@ interface ShowcasePanelProps {
 }
 
 function ShowcasePanel({ fileName, titleZH, titleEN, descZH, descEN }: ShowcasePanelProps) {
-  const [imgSrc, setImgSrc] = useState<string>(`/公共/${fileName}.png`);
+  const [imgSrc, setImgSrc] = useState<string>(`/showcase/${fileName}.png`);
   const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
-    setImgSrc(`/公共/${fileName}.png`);
+    setImgSrc(`/showcase/${fileName}.png`);
     setRetryCount(0);
   }, [fileName]);
 
   const handleImageError = () => {
     if (retryCount === 0) {
-      setImgSrc(`/公共/${fileName}.jpg`);
+      setImgSrc(`/showcase/${fileName}.jpg`);
       setRetryCount(1);
     } else if (retryCount === 1) {
-      setImgSrc(`/公共/${fileName}.jpeg`);
+      setImgSrc(`/showcase/${fileName}.jpeg`);
       setRetryCount(2);
     } else if (retryCount === 2) {
-      setImgSrc(`/公共/${fileName}.webp`);
+      setImgSrc(`/showcase/${fileName}.webp`);
       setRetryCount(3);
     } else if (retryCount === 3) {
       setImgSrc(`/${fileName}.png`);
@@ -209,7 +209,7 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
       >
         <div style={{ display: activeCardId === "layout-poster" ? "block" : "none" }}>
           <ShowcasePanel
-            fileName="编排海报设计"
+            fileName="layout_posters"
             titleZH="编排与海报设计展示"
             titleEN="Layout & Poster Design Showcase"
             descZH="海报排版视觉传达：对日常设计的实验性探索与实体作品排版。"
@@ -218,7 +218,7 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
         </div>
         <div style={{ display: activeCardId === "xpeng-ai-contest" ? "block" : "none" }}>
           <ShowcasePanel
-            fileName="ai公开赛"
+            fileName="ai_contest"
             titleZH="小鹏AI公开赛作品展示"
             titleEN="XPeng AI Open Contest Showcase"
             descZH="AIGC与智驾概念融合：利用生成式设计 and 矢量排版，重构科幻风格商业化视觉。"
@@ -227,7 +227,7 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
         </div>
         <div style={{ display: activeCardId === "speculative-design" ? "block" : "none" }}>
           <ShowcasePanel
-            fileName="思辨设计"
+            fileName="speculative_design"
             titleZH="地衣纪元思辨设计展示"
             titleEN="The Lichens Era Speculative Design Showcase"
             descZH="地衣生态微藻共生：以黑白像素、拓印文献，探索极端气候灾变下的未来系统。"
@@ -236,7 +236,7 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
         </div>
         <div style={{ display: activeCardId === "xpeng-daily-work" ? "block" : "none" }}>
           <ShowcasePanel
-            fileName="其他设计"
+            fileName="other_designs"
             titleZH="其他设计作品展示"
             titleEN="Other Designs Showcase"
             descZH="智能座舱经典游戏界面：融汇古籍、水墨、触控反馈，打磨高水准华夏传统细节设计。"
