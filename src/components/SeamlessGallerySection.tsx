@@ -9,17 +9,17 @@ interface ShowcasePanelProps {
 }
 
 function ShowcasePanel({ fileName, titleZH, titleEN, descZH, descEN }: ShowcasePanelProps) {
-  const [imgSrc, setImgSrc] = useState<string>(`/showcase/${fileName}.png`);
+  const [imgSrc, setImgSrc] = useState<string>(`/showcase/${fileName}.jpg`);
   const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
-    setImgSrc(`/showcase/${fileName}.png`);
+    setImgSrc(`/showcase/${fileName}.jpg`);
     setRetryCount(0);
   }, [fileName]);
 
   const handleImageError = () => {
     if (retryCount === 0) {
-      setImgSrc(`/showcase/${fileName}.jpg`);
+      setImgSrc(`/showcase/${fileName}.png`);
       setRetryCount(1);
     } else if (retryCount === 1) {
       setImgSrc(`/showcase/${fileName}.jpeg`);
@@ -28,10 +28,10 @@ function ShowcasePanel({ fileName, titleZH, titleEN, descZH, descEN }: ShowcaseP
       setImgSrc(`/showcase/${fileName}.webp`);
       setRetryCount(3);
     } else if (retryCount === 3) {
-      setImgSrc(`/${fileName}.png`);
+      setImgSrc(`/${fileName}.jpg`);
       setRetryCount(4);
     } else if (retryCount === 4) {
-      setImgSrc(`/${fileName}.jpg`);
+      setImgSrc(`/${fileName}.png`);
       setRetryCount(5);
     } else if (retryCount === 5) {
       setImgSrc(`/${fileName}.jpeg`);
