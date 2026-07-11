@@ -11,9 +11,20 @@ import { PersonalIntroSection } from "./components/PersonalIntroSection";
 
 export default function App() {
   const [lang, setLang] = useState<"EN" | "ZH">("ZH");
-  const [progress, setProgress] = useState<number>(0); // 0.0 to 1.0 continuous progress
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loaderStep, setLoaderStep] = useState<number>(0);
+  const [isOverHalf, setIsOverHalf] = useState<boolean>(false);
+  const [isOverNinety, setIsOverNinety] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showLangDropdown, setShowLangDropdown] = useState<boolean>(false);
   const [activeCardId, setActiveCardId] = useState<string>("layout-poster");
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const section1Ref = useRef<HTMLDivElement>(null);
@@ -28,9 +39,9 @@ export default function App() {
 
   // Apply a butter-smooth spring to the raw scroll value for physical momentum
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 25,
-    restDelta: 0.001
+    stiffness: 220,
+    damping: 30,
+    restDelta: 0.0001
   });
 
   // Calculate direct, reactive transforms on the compositor thread
@@ -48,7 +59,12 @@ export default function App() {
     const viewportHeight = window.innerHeight || 800;
     // Section 1's scrollable range is exactly 100vh (from start to when turquoise block fully covers the right side)
     const newProgress = Math.min(1, Math.max(0, scrollTop / viewportHeight));
-    setProgress(newProgress);
+    
+    const overHalf = newProgress > 0.5;
+    const overNinety = newProgress >= 0.9;
+    
+    setIsOverHalf((prev) => (prev !== overHalf ? overHalf : prev));
+    setIsOverNinety((prev) => (prev !== overNinety ? overNinety : prev));
   };
 
   const scrollToTop = () => {
@@ -78,15 +94,46 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Natural loader sequence driven by states (made faster, punchier, and more cohesive)
+  useEffect(() => {
+    // Stage 1: Pink circle grows gracefully
+    const t1 = setTimeout(() => setLoaderStep(1), 200);
+    // Stage 2: Grey circle grows inside with a fluid lag
+    const t2 = setTimeout(() => setLoaderStep(2), 600);
+    // Stage 3: Innermost dot and concentric tactile circles fade in softly
+    const t3 = setTimeout(() => setLoaderStep(3), 1000);
+    // Stage 4: Text elements fade in and rotate into place
+    const t4 = setTimeout(() => setLoaderStep(4), 1400);
+    // Stage 5: Transition to home page (move left/top and fade other things in)
+    const t5 = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(t5);
+    };
+  }, []);
+
   return (
-    <div 
-      ref={scrollContainerRef}
-      onScroll={handleScroll}
-      className="relative h-screen w-full flex flex-col bg-[#f0f0f0] text-zinc-900 font-sans select-none overflow-y-auto overflow-x-hidden scroll-smooth" 
-      id="app-root"
-    >
-      {/* 1. GLOBAL FIXED HEADER (fixed so it stays overlayed at the top of the viewport) */}
-      <header className="fixed top-0 left-0 right-0 h-20 px-6 md:px-12 flex items-center justify-between z-50 pointer-events-auto bg-[#dbdbdb]" id="main-header">
+    <>
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className={`relative h-screen w-full flex flex-col transition-colors duration-1000 ${isLoading ? "bg-white" : "bg-[#f0f0f0]"} text-zinc-900 font-sans select-none scroll-smooth ${isLoading ? "overflow-hidden" : "overflow-y-auto overflow-x-hidden"}`} 
+        id="app-root"
+      >
+        {/* 1. GLOBAL FIXED HEADER (fixed so it stays overlayed at the top of the viewport) */}
+        <motion.header 
+          initial={{ y: -80, opacity: 0 }}
+          animate={isLoading ? { y: -80, opacity: 0 } : { y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed top-0 left-0 right-0 h-20 px-6 md:px-12 flex items-center justify-between z-50 pointer-events-auto bg-[#dbdbdb]" 
+          id="main-header"
+        >
         {/* Left Section: Language Switcher and Navigation Menu */}
         <div className="flex items-center gap-12 md:gap-20" id="header-left-group">
           {/* Language Switcher Button */}
@@ -130,11 +177,11 @@ export default function App() {
           <nav className="hidden md:flex items-center gap-10 md:gap-14 text-[11px] md:text-xs font-sans font-semibold tracking-wider text-zinc-600" id="main-nav">
             <button 
               onClick={scrollToTop}
-              className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${progress < 0.9 ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
+              className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${!isOverNinety ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
               id="nav-home"
             >
               {lang === "EN" ? "HOME" : "HOME"}
-              {progress < 0.9 && (
+              {!isOverNinety && (
                 <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
               )}
             </button>
@@ -147,11 +194,11 @@ export default function App() {
             </button>
             <button 
               onClick={scrollToProduction}
-              className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${progress >= 0.9 ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
+              className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${isOverNinety ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
               id="nav-work-details"
             >
               {lang === "EN" ? "WORK DETAILS" : "WORK DETAILS"}
-              {progress >= 0.9 && (
+              {isOverNinety && (
                 <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
               )}
             </button>
@@ -176,7 +223,7 @@ export default function App() {
             </span>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* 2. SPLIT SCREEN PANELS STICKY SCROLL SECTION */}
       <div 
@@ -185,19 +232,34 @@ export default function App() {
         id="section-1-wrapper"
       >
         
-        {/* LEFT PANEL: FOCUSING RING ON WHITE CANVAS (60% Width on Desktop) */}
-        <div 
-          className="sticky top-0 w-full md:w-[60%] h-[50vh] md:h-screen bg-white flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-zinc-200 z-10"
+        {/* LEFT PANEL: FOCUSING RING ON WHITE CANVAS */}
+        <motion.div 
+          initial={{ width: "100%" }}
+          animate={{
+            width: isLoading ? "100%" : (isMobile ? "100%" : "60%"),
+            height: isMobile ? (isLoading ? "100vh" : "50vh") : "100vh",
+          }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className={`sticky top-0 bg-white flex items-center justify-center overflow-hidden z-10 ${
+            isLoading ? "" : "border-b md:border-b-0 md:border-r border-zinc-200"
+          }`}
           id="left-focus-panel"
         >
           {/* STATIC CYAN ROUNDED RECTANGLE AT THE TOP RIGHT OF FOCUS RING */}
-          <div 
+          <motion.div 
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={isLoading ? { scaleX: 0, opacity: 0 } : { scaleX: 1, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            style={{ originX: 1 }}
             className="absolute top-24 md:top-28 right-8 md:right-16 w-32 h-10 bg-[#00d5c3] z-30"
             id="static-cyan-badge"
           />
 
           {/* FOCUSING RING CONTAINER */}
-          <div className="relative w-[380px] h-[380px] sm:w-[540px] sm:h-[540px] md:w-[640px] md:h-[640px] lg:w-[760px] lg:h-[760px] xl:w-[880px] xl:h-[880px] max-w-full max-h-[92%] flex items-center justify-center z-10" id="focus-ring-stage">
+          <div 
+            className="relative w-[320px] h-[320px] sm:w-[500px] sm:h-[500px] md:w-[600px] md:h-[600px] lg:w-[720px] lg:h-[720px] xl:w-[840px] xl:h-[840px] max-w-[92%] max-h-[92%] flex items-center justify-center z-10 origin-center" 
+            id="focus-ring-stage"
+          >
             
             {/* The Animated Focusing Ring SVG container */}
             <div
@@ -226,131 +288,250 @@ export default function App() {
                 </defs>
 
                  {/* Main Rotatable Group: ensures perfect concentric alignment around (300,300) */}
+                 {/* This unified group handles the beautiful intro rotation during loading, and transitions seamlessly to scroll rotation at scroll-top (0deg) */}
                 <motion.g
-                  style={{ 
+                  style={isLoading ? {
+                    transformOrigin: "300px 300px",
+                    transformBox: "view-box"
+                  } : { 
                     rotate: rotateOuter,
                     transformOrigin: "300px 300px", 
                     transformBox: "view-box" 
                   }}
-                  className="origin-[300px_300px]"
-                  id="main-concentric-rotating-group"
+                  initial={isLoading ? { rotate: -40 } : undefined}
+                  animate={isLoading ? { rotate: 0 } : undefined}
+                  transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+                  id="unified-outer-rotation-group"
                 >
-                  {/* CURVED GRIP TYPOGRAPHY - OUTSIDE THE RING, CONCENTRIC & HUGGING THE EDGE */}
-                  <text fill="black" className="font-sans font-black text-[42px]" style={{ letterSpacing: "0.07em", wordSpacing: "0.24em" }} dy="0">
-                    <textPath href="#outerTopArc" startOffset="50%" textAnchor="middle">
-                      DESIGN PORTFOLIO
-                    </textPath>
-                  </text>
-                  
-                  <text fill="black" className="font-sans font-black text-[42px]" style={{ letterSpacing: "0.07em", wordSpacing: "0.24em" }} dy="0">
-                    <textPath href="#outerBottomArc" startOffset="50%" textAnchor="middle">
-                      FROM 2023 TO 2026
-                    </textPath>
-                  </text>
-
-                  {/* Main outer pink circle focusing ring (R=185) */}
-                  <circle cx="300" cy="300" r="185" fill="#ff3b8d" />
-
-                  {/* Multiple inner concentric thin lines inside the pink circle simulating a tactile focusing grip */}
-                  <circle cx="300" cy="300" r="178" stroke="white" strokeWidth="1" fill="none" opacity="0.4" />
-                  <circle cx="300" cy="300" r="172" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
-                  <circle cx="300" cy="300" r="166" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5" />
-                  <circle cx="300" cy="300" r="160" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
-                  <circle cx="300" cy="300" r="154" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
-                  <circle cx="300" cy="300" r="148" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5" />
-                  <circle cx="300" cy="300" r="142" stroke="white" strokeWidth="1" fill="none" opacity="0.4" />
-
-                  {/* INNER GREY FOCUS RING COMPONENT: ROTATES AND SCALES */}
-                  {/* Scale the middle grey circle up more on focus as requested */}
-                  <motion.g
-                    style={{
-                      scale: scaleInnerGroup,
-                      rotate: rotateInnerGroup,
-                      transformOrigin: "300px 300px", 
-                      transformBox: "view-box"
-                    }}
-                    className="origin-[300px_300px]"
-                    id="inner-focus-circle-group"
-                  >
-                    {/* Middle Grey Circle */}
-                    <circle cx="300" cy="300" r="115" fill="#e2e2e2" />
-                    <circle cx="300" cy="300" r="114" stroke="rgba(0,0,0,0.06)" strokeWidth="1" fill="none" />
-
-                    {/* Innermost zoom group: center dot and labels scale up extra to become larger */}
+                    {/* CURVED GRIP TYPOGRAPHY - OUTSIDE THE RING, CONCENTRIC & HUGGING THE EDGE */}
                     <motion.g
-                      style={{
-                        scale: scaleInnermost,
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ 
+                        opacity: (!isLoading || loaderStep >= 4) ? 1 : 0, 
+                        scale: (!isLoading || loaderStep >= 4) ? 1 : 0.96 
+                      }}
+                      transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                      className="origin-[300px_300px]"
+                    >
+                      <text fill="black" className="font-sans font-black text-[42px]" style={{ letterSpacing: "0.07em", wordSpacing: "0.24em" }} dy="0">
+                        <textPath href="#outerTopArc" startOffset="50%" textAnchor="middle">
+                          DESIGN PORTFOLIO
+                        </textPath>
+                      </text>
+                      
+                      <text fill="black" className="font-sans font-black text-[42px]" style={{ letterSpacing: "0.07em", wordSpacing: "0.24em" }} dy="0">
+                        <textPath href="#outerBottomArc" startOffset="50%" textAnchor="middle">
+                          FROM 2023 TO 2026
+                        </textPath>
+                      </text>
+                    </motion.g>
+
+                    {/* Main outer pink circle focusing ring (R=185) */}
+                    <motion.circle
+                      cx="300"
+                      cy="300"
+                      r="185"
+                      fill="#ff3b8d"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: (!isLoading || loaderStep >= 1) ? 1 : 0 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 28,
+                        damping: 14,
+                        restDelta: 0.005
+                      }}
+                      className="origin-[300px_300px]"
+                    />
+
+                    {/* Multiple inner concentric thin lines inside the pink circle simulating a tactile focusing grip */}
+                    <motion.g
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: (!isLoading || loaderStep >= 3) ? 0.45 : 0 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                    >
+                      <circle cx="300" cy="300" r="178" stroke="white" strokeWidth="1" fill="none" opacity="0.4" />
+                      <circle cx="300" cy="300" r="172" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
+                      <circle cx="300" cy="300" r="166" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5" />
+                      <circle cx="300" cy="300" r="160" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
+                      <circle cx="300" cy="300" r="154" stroke="white" strokeWidth="1" fill="none" opacity="0.3" />
+                      <circle cx="300" cy="300" r="148" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5" />
+                      <circle cx="300" cy="300" r="142" stroke="white" strokeWidth="1" fill="none" opacity="0.4" />
+                    </motion.g>
+
+                    {/* INNER GREY FOCUS RING COMPONENT: ROTATES AND SCALES */}
+                    {/* Scale the middle grey circle up more on focus as requested */}
+                    {/* 1. SCROLL-DRIVEN INNER GROUP (rotate & scale) */}
+                    <motion.g
+                      style={isLoading ? {
+                        transformOrigin: "300px 300px",
+                        transformBox: "view-box"
+                      } : {
+                        scale: scaleInnerGroup,
+                        rotate: rotateInnerGroup,
                         transformOrigin: "300px 300px", 
                         transformBox: "view-box"
                       }}
-                      className="origin-[300px_300px]"
-                      id="innermost-focus-zoom-group"
+                      id="scroll-inner-group"
                     >
-                      {/* Inner top arc path for curving text inside the grey circle (R_grey=115, Path R=82) */}
-                      <path 
-                        id="innerTopArc" 
-                        d="M 218,300 A 82,82 0 0,1 382,300" 
-                        fill="none" 
-                      />
+                      {/* 2. LOADER-DRIVEN INNER GROUP */}
+                      <motion.g
+                        style={{
+                          transformOrigin: "300px 300px",
+                          transformBox: "view-box"
+                        }}
+                        animate={isLoading ? {
+                          scale: loaderStep >= 2 ? 1 : 0
+                        } : {
+                          scale: 1
+                        }}
+                        transition={{ 
+                          type: "spring",
+                          stiffness: 32,
+                          damping: 15,
+                          restDelta: 0.005
+                        }}
+                        id="loader-inner-group"
+                      >
+                        {/* Middle Grey Circle */}
+                        <circle cx="300" cy="300" r="115" fill="#e2e2e2" />
+                        <circle cx="300" cy="300" r="114" stroke="rgba(0,0,0,0.06)" strokeWidth="1" fill="none" />
 
-                      {/* Inner Text Labels curved concentric to the inner ring - perfectly spaced 120 degrees apart with elegant smaller typography to prevent overlapping */}
-                      <g id="focus-labels">
-                        {/* label: visual system (rotated to the top-right, ~2 o'clock) */}
-                        <g transform="rotate(55 300 300)">
-                          <text fill="black" className="font-sans font-black text-[13px] sm:text-[14px]" style={{ letterSpacing: "0.06em" }} dy="0">
-                            <textPath href="#innerTopArc" startOffset="50%" textAnchor="middle">
-                              visual system
-                            </textPath>
-                          </text>
-                        </g>
-                        
-                        {/* label: digital art (rotated to the top-left, ~10 o'clock) */}
-                        <g transform="rotate(-65 300 300)">
-                          <text fill="black" className="font-sans font-black text-[13px] sm:text-[14px]" style={{ letterSpacing: "0.06em" }} dy="0">
-                            <textPath href="#innerTopArc" startOffset="50%" textAnchor="middle">
-                              digital art
-                            </textPath>
-                          </text>
-                        </g>
-                        
-                        {/* label: future concepthu (rotated to the bottom, ~6 o'clock) */}
-                        <g transform="rotate(175 300 300)">
-                          <text fill="black" className="font-sans font-black text-[13px] sm:text-[14px]" style={{ letterSpacing: "0.06em" }} dy="0">
-                            <textPath href="#innerTopArc" startOffset="50%" textAnchor="middle">
-                              future concepthu
-                            </textPath>
-                          </text>
-                        </g>
-                      </g>
+                        {/* Innermost zoom group: center dot and labels scale up extra to become larger */}
+                        {/* 1. SCROLL-DRIVEN INNERMOST GROUP */}
+                        <motion.g
+                          style={isLoading ? {
+                            transformOrigin: "300px 300px",
+                            transformBox: "view-box"
+                          } : {
+                            scale: scaleInnermost,
+                            transformOrigin: "300px 300px", 
+                            transformBox: "view-box"
+                          }}
+                          id="scroll-innermost-group"
+                        >
+                          {/* 2. LOADER-DRIVEN INNERMOST GROUP */}
+                          <motion.g
+                            style={{
+                              transformOrigin: "300px 300px",
+                              transformBox: "view-box"
+                            }}
+                            animate={isLoading ? {
+                              scale: loaderStep >= 3 ? 1 : 0
+                            } : {
+                              scale: 1
+                            }}
+                            transition={{ 
+                              type: "spring",
+                              stiffness: 36,
+                              damping: 16,
+                              restDelta: 0.005
+                            }}
+                            id="loader-innermost-group"
+                          >
+                            {/* Inner top arc path for curving text inside the grey circle (R_grey=115, Path R=82) */}
+                            <path 
+                              id="innerTopArc" 
+                              d="M 218,300 A 82,82 0 0,1 382,300" 
+                              fill="none" 
+                            />
 
-                      {/* Absolute Center Dot of the Focus Circle */}
-                      <circle cx="300" cy="300" r="45" fill="#cccccc" />
+                            {/* Inner Text Labels curved concentric to the inner ring - perfectly spaced 120 degrees apart with elegant smaller typography to prevent overlapping */}
+                            <motion.g 
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: (!isLoading || loaderStep >= 4) ? 1 : 0 }}
+                              transition={{ duration: 0.8 }}
+                              id="focus-labels"
+                            >
+                              {/* label: visual system (rotated to the top-right, ~2 o'clock) */}
+                              <g transform="rotate(55 300 300)">
+                                <text fill="black" className="font-sans font-black text-[13px] sm:text-[14px]" style={{ letterSpacing: "0.06em" }} dy="0">
+                                  <textPath href="#innerTopArc" startOffset="50%" textAnchor="middle">
+                                    visual system
+                                  </textPath>
+                                </text>
+                              </g>
+                              
+                              {/* label: digital art (rotated to the top-left, ~10 o'clock) */}
+                              <g transform="rotate(-65 300 300)">
+                                <text fill="black" className="font-sans font-black text-[13px] sm:text-[14px]" style={{ letterSpacing: "0.06em" }} dy="0">
+                                  <textPath href="#innerTopArc" startOffset="50%" textAnchor="middle">
+                                    digital art
+                                  </textPath>
+                                </text>
+                              </g>
+                              
+                              {/* label: future concepthu (rotated to the bottom, ~6 o'clock) */}
+                              <g transform="rotate(175 300 300)">
+                                <text fill="black" className="font-sans font-black text-[13px] sm:text-[14px]" style={{ letterSpacing: "0.06em" }} dy="0">
+                                  <textPath href="#innerTopArc" startOffset="50%" textAnchor="middle">
+                                    future concepthu
+                                  </textPath>
+                                </text>
+                              </g>
+                            </motion.g>
+
+                            {/* Absolute Center Dot of the Focus Circle */}
+                            <circle cx="300" cy="300" r="45" fill="#cccccc" />
+                          </motion.g>
+                        </motion.g>
+                      </motion.g>
                     </motion.g>
                   </motion.g>
-                </motion.g>
               </svg>
             </div>
           </div>
 
-          {/* Subtle scroll help indicator */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 opacity-40 hover:opacity-100 transition-opacity z-20 pointer-events-none" id="scroll-hint">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">
-              {lang === "EN" ? "SCROLL DOWN TO FOCUS" : "向下滑动以对焦"}
-            </span>
-            <div className="w-5 h-8 border-2 border-zinc-400 rounded-full flex justify-center p-1">
+          {/* Progress loader text at the bottom (only visible when loading) */}
+          <AnimatePresence>
+            {isLoading && (
               <motion.div 
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                className="w-1 h-2 bg-zinc-500 rounded-full"
-              />
-            </div>
-          </div>
-        </div>
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                exit={{ opacity: 0, y: 15, transition: { duration: 1.0, ease: [0.16, 1, 0.3, 1] } }}
+                className="absolute bottom-12 text-center text-[10px] md:text-xs font-mono font-semibold tracking-widest text-zinc-400 select-none pointer-events-none"
+                id="loader-progress-text"
+              >
+                {lang === "EN" ? "INITIALIZING CREATIVE SYSTEM..." : "正在初始化创意系统..."}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        {/* RIGHT PANEL: TWO VERTICALLY STACKED BLOCKS THAT SCROLL NATIVELY (40% Width on Desktop) */}
-        <div 
-          className="relative w-full md:w-[40%] flex flex-col bg-transparent z-10"
+          {/* Subtle scroll help indicator (fades in once loading finishes) */}
+          <AnimatePresence>
+            {!isLoading && (
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 0.4, y: 0 }}
+                transition={{ duration: 1.2, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 hover:opacity-100 transition-opacity z-20 pointer-events-none" 
+                id="scroll-hint"
+              >
+                <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">
+                  {lang === "EN" ? "SCROLL DOWN TO FOCUS" : "向下滑动以对焦"}
+                </span>
+                <div className="w-5 h-8 border-2 border-zinc-400 rounded-full flex justify-center p-1">
+                  <motion.div 
+                    animate={{ y: [0, 8, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-1 h-2 bg-zinc-500 rounded-full"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* RIGHT PANEL: TWO VERTICALLY STACKED BLOCKS THAT SCROLL NATIVELY */}
+        <motion.div 
+          initial={{ opacity: 0, width: "0%" }}
+          animate={{
+            opacity: isLoading ? 0 : 1,
+            width: isLoading ? "0%" : (isMobile ? "100%" : "40%"),
+          }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="relative flex flex-col bg-transparent z-10 border-t md:border-t-0 overflow-hidden shrink-0"
           id="right-details-panel"
+          style={{ display: isLoading ? "none" : "flex" }}
         >
           {/* 1. TOP BLOCK: GREY BACKGROUND BLOCK (h-[50vh] or h-screen) */}
           <div
@@ -359,7 +540,7 @@ export default function App() {
           >
             {/* Scroll Up Shortcut floating button (only visible when in State 2) */}
             <AnimatePresence>
-              {progress > 0.5 && (
+              {isOverHalf && (
                 <motion.button
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -415,7 +596,7 @@ export default function App() {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
       </div> {/* Closes section-1-wrapper */}
 
@@ -521,7 +702,8 @@ export default function App() {
          © 2026 XH STUDIO | PERFECT VECTOR FOCUS EMULATOR
       </footer>
     </div>
-  </div>
+    </div>
+    </>
   );
 }
 
