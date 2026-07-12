@@ -1,6 +1,6 @@
 {
-  "name": "Xh Studio",
-  "description": "An interactive, highly animated personal design portfolio inspired by Xpeng design work.",
+  "name": "Hazel Studio",
+  "description": "An interactive, highly animated personal design portfolio inspired by Hazel Studio design work.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

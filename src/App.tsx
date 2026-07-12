@@ -18,6 +18,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showLangDropdown, setShowLangDropdown] = useState<boolean>(false);
   const [activeCardId, setActiveCardId] = useState<string>("layout-poster");
+  const [activeSection, setActiveSection] = useState<"HOME" | "PROJECTS" | "ABOUT">("HOME");
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -65,6 +66,30 @@ export default function App() {
     
     setIsOverHalf((prev) => (prev !== overHalf ? overHalf : prev));
     setIsOverNinety((prev) => (prev !== overNinety ? overNinety : prev));
+
+    // Dynamic active nav section detection based on actual element offsets
+    const section2 = document.getElementById("production-portfolio-section");
+    const sectionAbout = document.getElementById("personal-intro-section");
+    
+    if (scrollContainerRef.current) {
+      const containerTop = scrollContainerRef.current.getBoundingClientRect().top;
+      
+      let currentSection: "HOME" | "PROJECTS" | "ABOUT" = "HOME";
+      
+      if (sectionAbout) {
+        const aboutTop = sectionAbout.getBoundingClientRect().top - containerTop;
+        if (aboutTop <= 160) {
+          currentSection = "ABOUT";
+        } else if (section2) {
+          const section2Top = section2.getBoundingClientRect().top - containerTop;
+          if (section2Top <= 160) {
+            currentSection = "PROJECTS";
+          }
+        }
+      }
+      
+      setActiveSection(currentSection);
+    }
   };
 
   const scrollToTop = () => {
@@ -73,9 +98,16 @@ export default function App() {
     }
   };
 
-  const scrollToProduction = () => {
+  const scrollToProjects = () => {
     if (section2Ref.current) {
       section2Ref.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const scrollToAbout = () => {
+    const el = document.getElementById("personal-intro-section");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -131,99 +163,173 @@ export default function App() {
           initial={{ y: -80, opacity: 0 }}
           animate={isLoading ? { y: -80, opacity: 0 } : { y: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed top-0 left-0 right-0 h-20 px-6 md:px-12 flex items-center justify-between z-50 pointer-events-auto bg-[#dbdbdb]" 
+          className="fixed top-0 left-0 right-0 h-20 flex items-center z-50 pointer-events-auto bg-[#dbdbdb]" 
           id="main-header"
         >
-        {/* Left Section: Language Switcher and Navigation Menu */}
-        <div className="flex items-center gap-12 md:gap-20" id="header-left-group">
-          {/* Language Switcher Button */}
-          <div className="relative" id="language-switcher-container">
-            <button 
-              onClick={() => setShowLangDropdown(!showLangDropdown)}
-              className="flex items-center gap-1 px-4 py-1.5 rounded-full border border-zinc-400 bg-transparent hover:border-zinc-800 transition-all text-xs font-mono font-medium tracking-wider cursor-pointer text-zinc-700"
-              id="lang-selector"
-            >
-              <span>{lang === "EN" ? "EN" : "ZH"}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-zinc-600 transition-transform duration-300 ${showLangDropdown ? "rotate-180" : ""}`} />
-            </button>
-            
-            <AnimatePresence>
-              {showLangDropdown && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  className="absolute top-full left-0 mt-2 w-28 bg-white border border-zinc-200 rounded-lg shadow-lg overflow-hidden py-1 z-50 text-xs"
-                  id="lang-dropdown"
+          {/* Left Portion of Header: Aligns with Left Panel (60% on desktop, 100% on mobile) */}
+          <div className="w-full md:w-[60%] px-6 md:px-12 h-full flex items-center justify-between md:justify-center relative" id="header-left-half">
+            {/* Language Switcher on the left */}
+            <div className="md:absolute md:left-12 flex items-center" id="header-left-group">
+              {/* Language Switcher Button */}
+              <div className="relative" id="language-switcher-container">
+                <button 
+                  onClick={() => setShowLangDropdown(!showLangDropdown)}
+                  className="flex items-center gap-1 px-4 py-1.5 rounded-full border border-zinc-400 bg-transparent hover:border-zinc-800 transition-all text-xs font-mono font-medium tracking-wider cursor-pointer text-zinc-700"
+                  id="lang-selector"
                 >
-                  <button 
-                    onClick={() => { setLang("EN"); setShowLangDropdown(false); }}
-                    className={`w-full text-left px-4 py-2 hover:bg-zinc-100 transition-colors font-mono ${lang === "EN" ? "font-bold text-pink-600 bg-pink-50/50" : ""}`}
+                  <span>{lang === "EN" ? "EN" : "ZH"}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-zinc-600 transition-transform duration-300 ${showLangDropdown ? "rotate-180" : ""}`} />
+                </button>
+                
+                <AnimatePresence>
+                  {showLangDropdown && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      className="absolute top-full left-0 mt-2 w-28 bg-white border border-zinc-200 rounded-lg shadow-lg overflow-hidden py-1 z-50 text-xs"
+                      id="lang-dropdown"
+                    >
+                      <button 
+                        onClick={() => { setLang("EN"); setShowLangDropdown(false); }}
+                        className={`w-full text-left px-4 py-2 hover:bg-zinc-100 transition-colors font-mono ${lang === "EN" ? "font-bold text-pink-600 bg-pink-50/50" : ""}`}
+                      >
+                        English
+                      </button>
+                      <button 
+                        onClick={() => { setLang("ZH"); setShowLangDropdown(false); }}
+                        className={`w-full text-left px-4 py-2 hover:bg-zinc-100 transition-colors font-sans ${lang === "ZH" ? "font-bold text-pink-600 bg-pink-50/50" : ""}`}
+                      >
+                        简体中文
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Navigation links centered perfectly within this left portion on desktop */}
+            <div className="hidden md:flex justify-center" id="header-center-group">
+              <nav 
+                className="flex items-center gap-10 md:gap-14 text-[11px] md:text-xs font-sans font-bold tracking-wider text-zinc-600" 
+                id="main-nav"
+                style={{ paddingLeft: "-2px", paddingRight: "2px", paddingBottom: "5px" }}
+              >
+                <button 
+                  onClick={scrollToTop}
+                  className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${activeSection === "HOME" ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
+                  id="nav-home"
+                >
+                  HOME
+                  {activeSection === "HOME" && (
+                    <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
+                  )}
+                </button>
+                <button 
+                  onClick={scrollToProjects}
+                  className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${activeSection === "PROJECTS" ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
+                  id="nav-projects"
+                >
+                  PROJECTS
+                  {activeSection === "PROJECTS" && (
+                    <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
+                  )}
+                </button>
+                <button 
+                  onClick={scrollToAbout}
+                  className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${activeSection === "ABOUT" ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
+                  id="nav-about"
+                >
+                  ABOUT
+                  {activeSection === "ABOUT" && (
+                    <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
+                  )}
+                </button>
+              </nav>
+            </div>
+
+            {/* Mobile Connect Button & Badge (only visible inside header-left-half wrapper when space is tight on mobile) */}
+            <div className="flex md:hidden items-center gap-4" id="header-right-mobile">
+              <button 
+                onClick={scrollToAbout}
+                className="px-6 py-2 rounded-full bg-black text-white hover:bg-zinc-800 transition-all text-[11px] font-sans font-bold uppercase tracking-wider cursor-pointer shadow-sm shrink-0"
+                id="btn-connect-mobile"
+              >
+                connect me
+              </button>
+              <div 
+                className="relative flex items-center justify-center select-none cursor-pointer w-10 h-10" 
+                id="hx-badge-mobile" 
+                onClick={scrollToTop}
+              >
+                <svg viewBox="0 0 80 80" className="w-10 h-10 overflow-visible" id="badge-rotating-svg-mobile">
+                  <defs>
+                    <path
+                      id="badge-text-path-mobile"
+                      d="M 40,12 A 28,28 0 1,1 39.9,12"
+                      fill="none"
+                    />
+                  </defs>
+                  <circle cx="40" cy="40" r="20" fill="#ff3b8d" />
+                  <motion.g
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+                    style={{ transformOrigin: "40px 40px" }}
                   >
-                    English
-                  </button>
-                  <button 
-                    onClick={() => { setLang("ZH"); setShowLangDropdown(false); }}
-                    className={`w-full text-left px-4 py-2 hover:bg-zinc-100 transition-colors font-sans ${lang === "ZH" ? "font-bold text-pink-600 bg-pink-50/50" : ""}`}
-                  >
-                    简体中文
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <text fill="#ffffff" fontSize="7.2" fontWeight="800" className="font-sans tracking-[0.16em]">
+                      <textPath href="#badge-text-path-mobile" startOffset="0%">
+                        HAZEL STUDIO • HAZEL STUDIO •
+                      </textPath>
+                    </text>
+                  </motion.g>
+                </svg>
+              </div>
+            </div>
           </div>
 
-          {/* Navigation Links (placed next to Language Switcher) */}
-          <nav className="hidden md:flex items-center gap-10 md:gap-14 text-[11px] md:text-xs font-sans font-semibold tracking-wider text-zinc-600" id="main-nav">
+          {/* Right Portion of Header: Aligns with Right Panel (40% on desktop, completely hidden on mobile) */}
+          <div className="hidden md:flex md:w-[40%] px-6 md:px-12 h-full items-center justify-end gap-4 md:gap-6" id="header-right">
             <button 
-              onClick={scrollToTop}
-              className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${!isOverNinety ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
-              id="nav-home"
+              onClick={scrollToAbout}
+              className="px-8 py-2 rounded-full bg-black text-white hover:bg-zinc-800 transition-all text-xs font-sans font-bold uppercase tracking-wider cursor-pointer shadow-sm shrink-0"
+              id="btn-connect"
             >
-              {lang === "EN" ? "HOME" : "HOME"}
-              {!isOverNinety && (
-                <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
-              )}
+              connect me
             </button>
-            <button 
-              onClick={scrollToTop}
-              className="transition-all hover:text-zinc-950 cursor-pointer py-2 text-zinc-500"
-              id="nav-navigation"
-            >
-              {lang === "EN" ? "NAVIGATION" : "NAVIGATION"}
-            </button>
-            <button 
-              onClick={scrollToProduction}
-              className={`transition-all hover:text-zinc-950 cursor-pointer relative py-2 ${isOverNinety ? "text-zinc-950 font-bold" : "text-zinc-500"}`}
-              id="nav-work-details"
-            >
-              {lang === "EN" ? "WORK DETAILS" : "WORK DETAILS"}
-              {isOverNinety && (
-                <motion.div layoutId="nav-line" className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900" />
-              )}
-            </button>
-          </nav>
-        </div>
 
-        {/* Right Connect me & Badge */}
-        <div className="flex items-center gap-4" id="header-right">
-          <button 
-            onClick={scrollToProduction}
-            className="px-8 py-2 rounded-full bg-black text-white hover:bg-zinc-800 transition-all text-xs font-sans font-bold uppercase tracking-wider cursor-pointer shadow-sm"
-            id="btn-connect"
-          >
-            {lang === "EN" ? "connect me" : "connect me"}
-          </button>
-
-          {/* Solid pink circle with diagonal overlapping "HX" text */}
-          <div className="relative flex items-center justify-center select-none cursor-pointer" id="hx-badge" onClick={scrollToTop}>
-            <div className="w-10 h-10 rounded-full bg-[#ff3b8d]" />
-            <span className="absolute bottom-0 -left-1 text-[11px] font-bold text-white tracking-widest rotate-[-35deg]" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>
-              HX
-            </span>
+            {/* Solid pink circle with curved rotating HAZEL STUDIO text path around it */}
+            <div 
+              className="relative flex items-center justify-center select-none cursor-pointer w-14 h-14" 
+              id="hx-badge" 
+              onClick={scrollToTop}
+            >
+              <svg viewBox="0 0 80 80" className="w-14 h-14 overflow-visible" id="badge-rotating-svg">
+                <defs>
+                  <path
+                    id="badge-text-path"
+                    d="M 40,12 A 28,28 0 1,1 39.9,12"
+                    fill="none"
+                  />
+                </defs>
+                {/* Solid Pink circle in the center */}
+                <circle cx="40" cy="40" r="20" fill="#ff3b8d" />
+                
+                {/* Rotating white text around the pink circle */}
+                <motion.g
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 12, ease: "linear" }}
+                  style={{ transformOrigin: "40px 40px" }}
+                >
+                  <text fill="#ffffff" fontSize="7.2" fontWeight="800" className="font-sans tracking-[0.16em]">
+                    <textPath href="#badge-text-path" startOffset="0%">
+                      HAZEL STUDIO • HAZEL STUDIO •
+                    </textPath>
+                  </text>
+                </motion.g>
+              </svg>
+            </div>
           </div>
-        </div>
-      </motion.header>
+        </motion.header>
 
       {/* 2. SPLIT SCREEN PANELS STICKY SCROLL SECTION */}
       <div 
@@ -561,7 +667,7 @@ export default function App() {
               id="xh-studio-title-box"
             >
               <h1 className="text-4xl md:text-5xl font-sans font-black tracking-tight text-zinc-950" id="studio-title">
-                Xh Studio
+                Hazel Studio
               </h1>
             </div>
           </div>
@@ -606,7 +712,7 @@ export default function App() {
       className="relative w-full bg-white flex flex-col pt-0 pb-16 z-20"
       id="production-portfolio-section"
     >
-      {/* TICKER BANNER (I NEED A JOB) WITH CONTINUOUS SEAMLESS MARQUEE SCROLL */}
+      {/* TICKER BANNER (CLICK, WE COMMUNICATE) WITH CONTINUOUS SEAMLESS MARQUEE SCROLL */}
       <div className="relative w-full h-12 bg-[#dedede] flex items-center overflow-hidden border-y border-zinc-200" id="ticker-banner">
         {/* Scrolling Track */}
         <div className="flex overflow-hidden select-none w-full h-full items-center relative">
@@ -616,38 +722,38 @@ export default function App() {
               animate={{ x: [0, "-100%"] }}
               transition={{ 
                 ease: "linear", 
-                duration: 20, 
+                duration: 25, 
                 repeat: Infinity 
               }}
               className="flex flex-row shrink-0 whitespace-nowrap text-zinc-950 font-sans text-xs sm:text-sm font-black tracking-[0.25em] items-center"
             >
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
             </motion.div>
 
             <motion.div 
               animate={{ x: [0, "-100%"] }}
               transition={{ 
                 ease: "linear", 
-                duration: 20, 
+                duration: 25, 
                 repeat: Infinity 
               }}
               className="flex flex-row shrink-0 whitespace-nowrap text-zinc-950 font-sans text-xs sm:text-sm font-black tracking-[0.25em] items-center"
             >
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
-              <span className="mx-10">I NEED A JOB</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
+              <span className="mx-10">Click, we communicate</span>
             </motion.div>
           </div>
         </div>
@@ -663,6 +769,7 @@ export default function App() {
             size="1GB"
             isActive={activeCardId === "layout-poster"}
             onClick={() => setActiveCardId("layout-poster")}
+            index={0}
           />
           <MemoryCard 
             id="xpeng-ai-contest"
@@ -671,6 +778,7 @@ export default function App() {
             size="1GB"
             isActive={activeCardId === "xpeng-ai-contest"}
             onClick={() => setActiveCardId("xpeng-ai-contest")}
+            index={1}
           />
           <MemoryCard 
             id="speculative-design"
@@ -679,6 +787,7 @@ export default function App() {
             size="1GB"
             isActive={activeCardId === "speculative-design"}
             onClick={() => setActiveCardId("speculative-design")}
+            index={2}
           />
           <MemoryCard 
             id="xpeng-daily-work"
@@ -687,6 +796,7 @@ export default function App() {
             size="2GB"
             isActive={activeCardId === "xpeng-daily-work"}
             onClick={() => setActiveCardId("xpeng-daily-work")}
+            index={3}
           />
         </div>
       </div>
@@ -695,11 +805,11 @@ export default function App() {
       <SeamlessGallerySection lang={lang} activeCardId={activeCardId} />
 
       {/* NEW SECTION: PERSONAL INTRO SECTION */}
-      <PersonalIntroSection />
+      <PersonalIntroSection lang={lang} />
 
       {/* FOOTER SYSTEM LABEL */}
       <footer className="w-full text-center py-8 text-[8px] sm:text-[10px] font-mono tracking-widest opacity-25 select-none" id="app-footer">
-         © 2026 XH STUDIO | PERFECT VECTOR FOCUS EMULATOR
+         © 2026 HAZEL STUDIO | PERFECT VECTOR FOCUS EMULATOR
       </footer>
     </div>
     </div>
@@ -715,6 +825,7 @@ interface MemoryCardProps {
   size: string;
   isActive: boolean;
   onClick: () => void;
+  index: number;
 }
 
 interface Particle {
@@ -727,7 +838,7 @@ interface Particle {
   duration: number;
 }
 
-function MemoryCard({ id, englishLabel, chineseLabel, size, isActive, onClick }: MemoryCardProps) {
+function MemoryCard({ id, englishLabel, chineseLabel, size, isActive, onClick, index }: MemoryCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const mousePosRef = useRef({ x: 120, y: 160 }); // default center reference
@@ -787,7 +898,18 @@ function MemoryCard({ id, englishLabel, chineseLabel, size, isActive, onClick }:
   }, [isHovered]);
 
   return (
-    <div className="flex flex-col items-center justify-center py-4 relative" id={`card-outer-container-${id}`}>
+    <motion.div 
+      className="flex flex-col items-center justify-center py-4 relative" 
+      id={`card-outer-container-${id}`}
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ 
+        duration: 0.8, 
+        ease: [0.16, 1, 0.3, 1], 
+        delay: index * 0.12 
+      }}
+    >
       <motion.div
         className="relative w-[240px] h-[320px] cursor-pointer select-none"
         onMouseEnter={() => setIsHovered(true)}
@@ -922,6 +1044,6 @@ function MemoryCard({ id, englishLabel, chineseLabel, size, isActive, onClick }:
           </div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
