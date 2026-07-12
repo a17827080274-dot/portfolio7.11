@@ -128,6 +128,24 @@ export default function App() {
 
   // Natural loader sequence driven by states (made faster, punchier, and more cohesive)
   useEffect(() => {
+    // Background preload showcase images immediately on mount so they are fully cached and load instantly
+    const imagesToPreload = [
+      "/showcase/layout_posters.jpg",
+      "/showcase/layout_posters.png",
+      "/showcase/ai_contest.jpg",
+      "/showcase/ai_contest.png",
+      "/showcase/speculative_design.jpg",
+      "/showcase/speculative_design.png",
+      "/showcase/other_designs.jpg",
+      "/showcase/other_designs.png",
+      "/showcase/b8ea99c7fef30531f5ed178f3606a0cf 2.png"
+    ];
+
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
     // Stage 1: Pink circle grows gracefully
     const t1 = setTimeout(() => setLoaderStep(1), 200);
     // Stage 2: Grey circle grows inside with a fluid lag

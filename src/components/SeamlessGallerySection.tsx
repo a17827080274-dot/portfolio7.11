@@ -12,10 +12,12 @@ interface ShowcasePanelProps {
 function ShowcasePanel({ fileName, titleZH, titleEN, descZH, descEN }: ShowcasePanelProps) {
   const [imgSrc, setImgSrc] = useState<string>(`/showcase/${fileName}.jpg`);
   const [retryCount, setRetryCount] = useState<number>(0);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     setImgSrc(`/showcase/${fileName}.jpg`);
     setRetryCount(0);
+    setIsLoaded(false);
   }, [fileName]);
 
   const handleImageError = () => {
@@ -48,14 +50,27 @@ function ShowcasePanel({ fileName, titleZH, titleEN, descZH, descEN }: ShowcaseP
 
   return (
     <div 
-      className="h-full shrink-0 flex items-center justify-start select-none py-0"
+      className="h-full shrink-0 flex items-center justify-start select-none py-0 relative min-w-[320px]"
       id={`showcase-container-${fileName}`}
     >
+      {/* Premium Minimalist Loading Skeleton/Placeholder */}
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 border border-zinc-100 animate-pulse">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-[#ff3b8d]/20 border-t-[#ff3b8d] rounded-full animate-spin" />
+            <span className="text-xs font-mono tracking-widest text-zinc-400">LOADING VISUAL...</span>
+          </div>
+        </div>
+      )}
+
       <img 
         src={imgSrc} 
         alt={altText}
         onError={handleImageError}
-        className="h-[700px] w-auto max-w-none object-contain rounded-none shadow-none transition-transform duration-500"
+        onLoad={() => setIsLoaded(true)}
+        className={`h-[700px] w-auto max-w-none object-contain rounded-none shadow-none transition-all duration-700 ease-out ${
+          isLoaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[0.98] blur-sm"
+        }`}
         referrerPolicy="no-referrer"
       />
     </div>
