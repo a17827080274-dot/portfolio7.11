@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "motion/react";
 
 interface PersonalIntroSectionProps {
   lang?: "EN" | "ZH";
@@ -9,10 +10,20 @@ export function PersonalIntroSection({ lang = "ZH" }: PersonalIntroSectionProps)
   const portraitUrl = "/showcase/b8ea99c7fef30531f5ed178f3606a0cf 2.png";
 
   return (
-    <div className="w-full bg-white select-none flex flex-col font-sans animate-fade-in" id="personal-intro-section">
+    <motion.div 
+      className="w-full bg-white select-none flex flex-col font-sans" 
+      id="personal-intro-section"
+      initial={{ opacity: 0, y: 35 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.08 }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    >
       
       {/* 1. White Background Section - Perfect Split-Screen alignment matching the design guidelines */}
-      <div className="w-full px-6 md:px-12 py-16 md:py-24" id="intro-grid-container">
+      <div 
+        className="w-full px-6 md:px-12 py-16 md:py-24" 
+        id="intro-grid-container"
+      >
         
         {/* DESKTOP GRID LAYOUT: Strict layout aligned perfectly with the 60%/40% split boundary on the homepage */}
         <div className="hidden md:grid grid-cols-[calc(60vw-48px)_1fr] gap-x-0 items-stretch" id="about-desktop-grid">
@@ -331,6 +342,6 @@ export function PersonalIntroSection({ lang = "ZH" }: PersonalIntroSectionProps)
 
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

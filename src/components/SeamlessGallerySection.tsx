@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion } from "motion/react";
 
 interface ShowcasePanelProps {
   fileName: string;
@@ -167,15 +168,26 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
   };
 
   return (
-    <div className="relative w-full bg-white flex flex-col pt-0 pb-12 overflow-hidden border-t border-zinc-200" id="seamless-gallery-page">
+    <motion.div 
+      className="relative w-full bg-white flex flex-col pt-0 pb-12 overflow-hidden border-t border-zinc-200" 
+      id="seamless-gallery-page"
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+    >
       
       {/* 1. SLIDER PROGRESS BAR (Drag horizontally or swipe on trackpad to scroll) */}
-      <div 
+      <motion.div 
         ref={sliderRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         className="relative w-full h-20 bg-[#ff3b8d] cursor-pointer overflow-hidden select-none mb-0 shadow-inner"
         id="seamless-slider-track"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
       >
         {/* Gray curtain/handle starting from current progress and extending to the right */}
         <div 
@@ -187,7 +199,14 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
           id="seamless-slider-curtain"
         >
           {/* Slider drag label: Play Button + Text */}
-          <div className="flex items-center gap-4 pl-8 select-none whitespace-nowrap text-white" id="seamless-slider-label">
+          <motion.div 
+            className="flex items-center gap-4 pl-8 select-none whitespace-nowrap text-white" 
+            id="seamless-slider-label"
+            initial={{ opacity: 0, x: -15 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
+          >
             {/* White Play Triangle */}
             <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white stroke-none" id="slider-play-icon">
               <path d="M8 5v14l11-7z" />
@@ -195,9 +214,9 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
             <span className="font-sans font-bold text-base sm:text-lg tracking-widest text-white">
               {lang === "EN" ? "SLIDE RIGHT TO SEE MORE" : "向右滑动 查看更多"}
             </span>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* 2. HORIZONTAL SEAMLESS GALLERY */}
       <div 
@@ -249,11 +268,18 @@ export default function SeamlessGallerySection({ lang, activeCardId }: SeamlessG
       <div className="w-full px-6 md:px-12 mt-8 flex items-center gap-4" id="seamless-gallery-footer">
         {/* Dark square bullet */}
         <div className="w-5 h-5 bg-[#333333] shrink-0" id="footer-square-bullet" />
-        <h2 className="text-xl sm:text-2xl font-sans font-black tracking-wide text-zinc-900" id="footer-main-title">
+        <motion.h2 
+          className="text-xl sm:text-2xl font-sans font-black tracking-wide text-zinc-900" 
+          id="footer-main-title"
+          initial={{ opacity: 0, x: -25 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        >
           {getFooterTitle()}
-        </h2>
+        </motion.h2>
       </div>
 
-    </div>
+    </motion.div>
   );
 }
