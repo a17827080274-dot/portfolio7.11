@@ -128,20 +128,50 @@ export default function App() {
 
   // Natural loader sequence driven by states (made faster, punchier, and more cohesive)
   useEffect(() => {
-    // Background preload showcase images immediately on mount so they are fully cached and load instantly
-    const imagesToPreload = [
+    // Critical showcase images to preload (high priority .jpg files and user portrait)
+    const criticalImages = [
       "/showcase/layout_posters.jpg",
-      "/showcase/layout_posters.png",
       "/showcase/ai_contest.jpg",
-      "/showcase/ai_contest.png",
       "/showcase/speculative_design.jpg",
-      "/showcase/speculative_design.png",
       "/showcase/other_designs.jpg",
-      "/showcase/other_designs.png",
       "/showcase/b8ea99c7fef30531f5ed178f3606a0cf 2.png"
     ];
 
-    imagesToPreload.forEach((src) => {
+    let loadedCount = 0;
+    const totalToLoad = criticalImages.length;
+    let minTimePassed = false;
+    let imagesLoaded = false;
+    let hasTimedOut = false;
+
+    const tryFinishLoading = () => {
+      if (minTimePassed && (imagesLoaded || hasTimedOut)) {
+        setIsLoading(false);
+      }
+    };
+
+    const onImageLoadedOrFailed = () => {
+      loadedCount++;
+      if (loadedCount >= totalToLoad) {
+        imagesLoaded = true;
+        tryFinishLoading();
+      }
+    };
+
+    criticalImages.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = onImageLoadedOrFailed;
+      img.onerror = onImageLoadedOrFailed;
+    });
+
+    // Background prefetch non-critical format variants
+    const nonCritical = [
+      "/showcase/layout_posters.png",
+      "/showcase/ai_contest.png",
+      "/showcase/speculative_design.png",
+      "/showcase/other_designs.png"
+    ];
+    nonCritical.forEach((src) => {
       const img = new Image();
       img.src = src;
     });
@@ -154,10 +184,19 @@ export default function App() {
     const t3 = setTimeout(() => setLoaderStep(3), 1000);
     // Stage 4: Text elements fade in and rotate into place
     const t4 = setTimeout(() => setLoaderStep(4), 1400);
-    // Stage 5: Transition to home page (move left/top and fade other things in)
+    
+    // Stage 5: Minimum visual animation duration (2000ms)
     const t5 = setTimeout(() => {
-      setIsLoading(false);
+      minTimePassed = true;
+      tryFinishLoading();
     }, 2000);
+
+    // Stage 6: Safety network timeout (4500ms max wait)
+    const t6 = setTimeout(() => {
+      hasTimedOut = true;
+      minTimePassed = true;
+      setIsLoading(false);
+    }, 4500);
 
     return () => {
       clearTimeout(t1);
@@ -165,6 +204,7 @@ export default function App() {
       clearTimeout(t3);
       clearTimeout(t4);
       clearTimeout(t5);
+      clearTimeout(t6);
     };
   }, []);
 
